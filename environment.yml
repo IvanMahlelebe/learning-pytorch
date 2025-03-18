@@ -1,0 +1,17 @@
+name: pytorch
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - h5py
+  - opencv
+  - scikit-learn
+  - scipy
+  - pillow
+  - pytest
+  - plotly
+  - pip
+  - pip:
+    - notebook
+    - tqdm
