@@ -41,4 +41,5 @@ class MultiLayerPerceptron(nn.Module):
         Al = self.activations[l](Zl)
       else:
         Al = Zl
-    return Al
+    AL = Al # for clarity
+    return AL
