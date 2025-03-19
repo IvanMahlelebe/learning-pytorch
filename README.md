@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Learning PyTorch
 
 ## Repository Purpose
