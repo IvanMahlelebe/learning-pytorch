@@ -81,7 +81,7 @@ class MLPTrainer:
 
   def train(self) -> None:
     for epoch in range(self.epochs):
-      self.train_one_epoch()
+      _ = self.train_one_epoch()
       avg_vloss, _ = self.validate()
 
       if avg_vloss < self.best_vloss:

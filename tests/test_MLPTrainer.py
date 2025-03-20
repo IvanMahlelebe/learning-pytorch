@@ -32,7 +32,7 @@ class TestMLPTrainer:
   
   @pytest.fixture
   def mock_epochs(self) -> int:
-    return 10
+    return 4
 
   @pytest.fixture
   def mock_trainer(self, mock_model, mock_data, mock_epochs):
@@ -84,7 +84,7 @@ class TestMLPTrainer:
 
   def test_train(self, mock_trainer):
     """Test that the full training loop runs and saves the best model."""
-    epochs = 10
+    epochs = 4
     mock_trainer.train()
     assert len(mock_trainer.train_losses) == epochs
     assert len(mock_trainer.val_losses) == epochs
