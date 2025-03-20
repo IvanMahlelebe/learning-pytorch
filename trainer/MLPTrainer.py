@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as data
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from typing import List, Tuple
 
 from sklearn.metrics import confusion_matrix
@@ -41,7 +42,6 @@ class MLPTrainer:
       inputs, labels = data
       self.optimizer.zero_grad()
       outputs: torch.Tensor = self.model(inputs)
-      labels = labels.float().unsqueeze(1)
 
       loss: torch.Tensor = self.loss_fn(outputs, labels)
       loss.backward()
@@ -62,7 +62,7 @@ class MLPTrainer:
     with torch.no_grad():
       for inputs, labels in self.val_loader:
         outputs: torch.Tensor = self.model(inputs)
-        labels = labels.float().unsqueeze(1)
+        labels = labels.float()
 
         loss: torch.Tensor = self.loss_fn(outputs, labels)
         running_vloss += loss.item()
@@ -91,9 +91,15 @@ class MLPTrainer:
 
   def plot_metrics(self) -> None:
     """Plot training loss, validation loss, and validation accuracy."""
-    epoch_steps = range(1, self.epochs + 1)
-    
-    fig = go.Figure()
+    epoch_steps = list(range(1, self.epochs + 1))
+
+    fig = make_subplots(
+      rows=3, cols=1,
+      shared_xaxes=True,
+      vertical_spacing=0.15,
+      subplot_titles=("Training Loss", "Validation Loss", "Validation Accuracy"),
+    )
+
     traces = [
       {
         "name": "Training Loss",
@@ -101,7 +107,6 @@ class MLPTrainer:
         "mode": "lines+markers",
         "line": dict(color="blue"),
         "row": 1,
-        "col": 1,
       },
       {
         "name": "Validation Loss",
@@ -109,7 +114,6 @@ class MLPTrainer:
         "mode": "lines+markers",
         "line": dict(color="red"),
         "row": 2,
-        "col": 1,
       },
       {
         "name": "Validation Accuracy",
@@ -117,21 +121,19 @@ class MLPTrainer:
         "mode": "lines+markers",
         "line": dict(color="green"),
         "row": 3,
-        "col": 1,
       },
     ]
 
     for trace in traces:
       fig.add_trace(
         go.Scatter(
-          x=list(epoch_steps),
+          x=epoch_steps,
           y=trace["y"],
           mode=trace["mode"],
           name=trace["name"],
           line=trace["line"],
         ),
-        row=trace["row"],
-        col=trace["col"],
+        row=trace["row"], col=1
       )
 
     fig.update_layout(
@@ -141,12 +143,13 @@ class MLPTrainer:
       height=800,
     )
 
-    fig.update_yaxes(title_text="Training Loss", row=1, col=1)
-    fig.update_yaxes(title_text="Validation Loss", row=2, col=1)
-    fig.update_yaxes(title_text="Validation Accuracy", range=[0, 1], row=3, col=1)
     fig.update_xaxes(title_text="Epoch", row=3, col=1)
-    
+    fig.update_yaxes(title_text="Loss", row=1, col=1)
+    fig.update_yaxes(title_text="Loss", row=2, col=1)
+    fig.update_yaxes(title_text="Accuracy", range=[0, 1], row=3, col=1)
+
     fig.show()
+
 
   def plot_confusion_matrix(self) -> None:
     """Plot a confusion matrix for the validation set."""
