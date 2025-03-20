@@ -36,6 +36,5 @@ This command installs PyTorch and its dependencies for CPU usage. If you have a 
 
 Find the latest updates and code in this repository: [learning-pytorch](https://github.com/IvanMahlelebe/learning-pytorch.git)
 
-
 ---
 **Author:** IvanMahlelebe
