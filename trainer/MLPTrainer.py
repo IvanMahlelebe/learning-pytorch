@@ -9,6 +9,8 @@ from typing import List, Tuple
 from sklearn.metrics import confusion_matrix
 import numpy as np
 
+from datetime import datetime
+
 
 class MLPTrainer:
   def __init__(
@@ -80,48 +82,26 @@ class MLPTrainer:
     return avg_vloss, accuracy
 
   def train(self) -> None:
-    for epoch in range(self.epochs):
+    for _ in range(self.epochs):
       _ = self.train_one_epoch()
       avg_vloss, _ = self.validate()
 
       if avg_vloss < self.best_vloss:
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         self.best_vloss = avg_vloss
-        torch.save(self.model.state_dict(), "best_model.pth")
+        torch.save(self.model.state_dict(), f"models/modelparams/iteration.params.{timestamp}.pth")
         print(f"Saved new best model with validation loss {self.best_vloss:.4f}")
 
   def plot_metrics(self) -> None:
-    """Plot training loss, validation loss, and validation accuracy."""
+    """Plot training loss, validation loss, and validation accuracy on the same graph."""
     epoch_steps = list(range(1, self.epochs + 1))
 
-    fig = make_subplots(
-      rows=3, cols=1,
-      shared_xaxes=True,
-      vertical_spacing=0.15,
-      subplot_titles=("Training Loss", "Validation Loss", "Validation Accuracy"),
-    )
+    fig = go.Figure()
 
     traces = [
-      {
-        "name": "Training Loss",
-        "y": self.train_losses,
-        "mode": "lines+markers",
-        "line": dict(color="blue"),
-        "row": 1,
-      },
-      {
-        "name": "Validation Loss",
-        "y": self.val_losses,
-        "mode": "lines+markers",
-        "line": dict(color="red"),
-        "row": 2,
-      },
-      {
-        "name": "Validation Accuracy",
-        "y": self.val_accuracies,
-        "mode": "lines+markers",
-        "line": dict(color="green"),
-        "row": 3,
-      },
+      {"name": "Training Loss", "y": self.train_losses, "color": "#FC4100"},
+      {"name": "Validation Loss", "y": self.val_losses, "color": "#FFC55A"},
+      {"name": "Validation Accuracy", "y": self.val_accuracies, "color": "#00215E"},
     ]
 
     for trace in traces:
@@ -129,24 +109,34 @@ class MLPTrainer:
         go.Scatter(
           x=epoch_steps,
           y=trace["y"],
-          mode=trace["mode"],
+          mode="lines",
           name=trace["name"],
-          line=trace["line"],
-        ),
-        row=trace["row"], col=1
+          line=dict(color=trace["color"]),
+        )
       )
 
     fig.update_layout(
       title="Training and Validation Metrics",
+      xaxis_title="Epoch",
+      yaxis_title="Metric Value",
       showlegend=True,
       hovermode="x unified",
-      height=800,
+      height=500,
+      width=800,
+      plot_bgcolor="white",  # White background for the graph area
+      paper_bgcolor="white",
+      xaxis=dict(range=[0, self.epochs + 1]),  # X-axis starts at 0 and ends at the last epoch
+      yaxis=dict(range=[0, max(max(self.train_losses), max(self.val_losses), max(self.val_accuracies)) + 0.1]),  # White background for the entire plot
+      legend=dict(
+        x=0.02,  # Position the legend at 98% of the x-axis (right side)
+        y=0.98,  # Position the legend at 98% of the y-axis (top side)
+        xanchor="left",  # Anchor the legend to the right
+        yanchor="top",  # Anchor the legend to the top
+        bgcolor="rgba(255, 255, 255, 0)",  # Semi-transparent background
+        # bordercolor="rgba(0, 0, 0, 0.5)",  # Border color
+        #   borderwidth=1,  # Border width
+      ),
     )
-
-    fig.update_xaxes(title_text="Epoch", row=3, col=1)
-    fig.update_yaxes(title_text="Loss", row=1, col=1)
-    fig.update_yaxes(title_text="Loss", row=2, col=1)
-    fig.update_yaxes(title_text="Accuracy", range=[0, 1], row=3, col=1)
 
     fig.show()
 
