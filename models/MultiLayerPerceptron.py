@@ -3,7 +3,7 @@ import torch.nn as nn
 from typing import List, Callable
 
 class MultiLayerPerceptron(nn.Module):
-  def __init__(self, layer_dims: List[int], activations: List[Callable[[torch.Tensor], torch.Tensor]]):
+  def __init__(self, layer_dims: List[int], activations: List[Callable[[torch.Tensor], torch.Tensor]]) -> None:
     """
       Initializes the MultiLayerPerceptron.
 
