@@ -1,17 +1,18 @@
 name: pytorch
 channels:
   - conda-forge
-  - defaults
+channel_priority: strict
 dependencies:
   - python=3.10
   - h5py
   - opencv
   - scikit-learn
   - scipy
+  - pytorch
+  - torchvision
+  - torchaudio
   - pillow
   - pytest
   - plotly
-  - pip
-  - pip:
-    - notebook
-    - tqdm
+  - notebook
+  - tqdm

@@ -9,6 +9,8 @@ from typing import List, Tuple
 from sklearn.metrics import confusion_matrix
 import numpy as np
 
+from itertools import cycle
+
 from datetime import datetime
 
 
@@ -98,3 +100,46 @@ class MLPTrainer:
     if best_model_state is not None:
       torch.save(best_model_state, f"models/modelparams/iteration.params.{timestamp}.pth")
       # print(f"Saved new best model with validation loss {self.best_vloss:.4f}")
+
+  def train_steps(self, total_steps: int) -> None:
+
+    self.model.train()
+    step = 0
+    best_model_state = None
+    train_iter = cycle(self.train_loader)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+    self.train_errors = []
+    self.val_errors = []
+
+    while step < total_steps:
+      inputs, labels = next(train_iter)
+      self.optimizer.zero_grad()
+      outputs = self.model(inputs)
+      loss = self.loss_fn(outputs, labels)
+      loss.backward()
+      self.optimizer.step()
+
+      self.model.eval()
+      with torch.no_grad():
+        preds = torch.sigmoid(outputs) > 0.5
+        train_accuracy = (preds == labels).sum().item() / labels.size(0)
+        train_error = 1.0 - train_accuracy
+
+      self.model.train()
+      self.train_losses.append(loss.item())
+      self.train_errors.append(train_error)
+
+      val_loss, val_accuracy = self.validate()
+      val_error = 1.0 - val_accuracy
+      self.val_errors.append(val_error)
+
+      if val_loss < self.best_vloss:
+        self.best_vloss = val_loss
+        self.accuracy = val_accuracy
+        best_model_state = self.model.state_dict()
+
+      step += 1
+
+    if best_model_state is not None:
+      torch.save(best_model_state, f"models/modelparams/iteration.params.{timestamp}.pth")
