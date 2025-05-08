@@ -55,34 +55,40 @@ from typing import List
 
 
 
+import plotly.graph_objects as go
+
 def plot_metric(train_values, val_values, metric_name, train_label="Train", val_label="Test"):
   steps = list(range(1, len(train_values) + 1))
-  
+
   fig = go.Figure()
 
-  fig.add_trace(go.Scatter(
-    x=steps,
-    y=train_values,
-    mode="lines",
-    name=f"{train_label} {metric_name}",
-    line=dict(color="#FC4100", dash="solid")
-  ))
-
-  fig.add_trace(go.Scatter(
-    x=steps,
-    y=val_values,
-    mode="lines",
-    name=f"{val_label} {metric_name}",
-    line=dict(color="#FFC55A", dash="solid")
-  ))
+  for values, label, color in [(train_values, train_label, "#FC4100"), (val_values, val_label, "#FFC55A")]:
+    fig.add_trace(
+      go.Scatter(
+        x=steps,
+        y=values,
+        mode="lines",
+        name=f"{label} {metric_name}",
+        line=dict(color=color, dash="solid")
+      )
+    )
 
   fig.update_layout(
-    title=f"{metric_name} Over Training Steps",
-    xaxis_title="Step",
+    title=f"<b>{metric_name} Over Training Steps</b>",
+    xaxis_title="Training Steps",
     yaxis_title=metric_name,
     height=500,
     width=700,
     showlegend=True,
+    legend=dict(
+      x=0.99,
+      y=0.99,
+      xanchor="right",
+      yanchor="top",
+      bgcolor="rgba(255,255,255,0.7)",
+      # bordercolor="lightgrey",
+      # borderwidth=1
+    ),
     plot_bgcolor="white",
     paper_bgcolor="white",
     hovermode="x unified"

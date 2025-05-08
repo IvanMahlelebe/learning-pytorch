@@ -1,12 +1,15 @@
 name: pytorch
 channels:
   - conda-forge
-channel_priority: strict
+# channel_priority: strict
 dependencies:
   - python=3.10
+  - pandas
   - h5py
   - opencv
   - scikit-learn
+  - scikit-image
+  - matplotlib
   - scipy
   - pytorch
   - torchvision
