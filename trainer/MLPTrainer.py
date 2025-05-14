@@ -2,12 +2,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as data
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from typing import List, Tuple
+import pandas as pd
 
-from sklearn.metrics import confusion_matrix
-import numpy as np
+import os
 
 from itertools import cycle
 
@@ -34,8 +32,12 @@ class MLPTrainer:
 
     # Store metrics for visualization
     self.train_losses: List[float] = []
+    self.train_errors: List[float] = []
+
     self.val_losses: List[float] = []
+    self.val_errors: List[float] = []
     self.val_accuracies: List[float] = []
+
     self.best_vloss: float = float("inf")
     self.accuracy: float = 0.0
 
@@ -58,7 +60,7 @@ class MLPTrainer:
     self.train_losses.append(avg_loss)
     return avg_loss
 
-  def validate(self) -> Tuple[float, float]:
+  def validate(self) -> Tuple[float, float, float]:
     self.model.eval()
     running_vloss: float = 0.0
     correct: int = 0
@@ -78,18 +80,20 @@ class MLPTrainer:
 
     avg_vloss: float = running_vloss / len(self.val_loader)
     accuracy: float = correct / total
+    val_error: float = 1.0 - accuracy
 
     self.val_losses.append(avg_vloss)
     self.val_accuracies.append(accuracy)
+    self.val_errors.append(val_error)
 
-    return avg_vloss, accuracy
+    return avg_vloss, accuracy, val_error
 
   def train(self) -> None:
 
     best_model_state = None
     for _ in range(self.epochs):
       _ = self.train_one_epoch()
-      avg_vloss, accuracy = self.validate()
+      avg_vloss, accuracy, val_error = self.validate()
 
       if avg_vloss < self.best_vloss:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -102,16 +106,14 @@ class MLPTrainer:
       # print(f"Saved new best model with validation loss {self.best_vloss:.4f}")
 
   def train_steps(self, total_steps: int) -> None:
-
     self.model.train()
     step = 0
+    self.best_step: int = 0
     best_model_state = None
     train_iter = cycle(self.train_loader)
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
-    self.train_errors = []
-    self.val_errors = []
-
+    model_timestamp: str = ''
+    results_timestamp: str = ''
     while step < total_steps:
       inputs, labels = next(train_iter)
       self.optimizer.zero_grad()
@@ -130,16 +132,33 @@ class MLPTrainer:
       self.train_losses.append(loss.item())
       self.train_errors.append(train_error)
 
-      val_loss, val_accuracy = self.validate()
-      val_error = 1.0 - val_accuracy
-      self.val_errors.append(val_error)
+      avg_vloss, accuracy, _ = self.validate()
+      # val_error = 1.0 - val_accuracy
+      # self.val_errors.append(val_error)
+      # self.val_losses.append(val_loss)
 
-      if val_loss < self.best_vloss:
-        self.best_vloss = val_loss
-        self.accuracy = val_accuracy
+      if avg_vloss < self.best_vloss:
+        model_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        self.best_step = step
+        self.best_vloss = avg_vloss
+        self.accuracy = accuracy
         best_model_state = self.model.state_dict()
 
       step += 1
 
     if best_model_state is not None:
-      torch.save(best_model_state, f"models/modelparams/iteration.params.{timestamp}.pth")
+      torch.save(best_model_state, f"models/modelparams/iteration.params.{model_timestamp}.pth")
+
+      df = pd.DataFrame({
+        'train_step': range(1, total_steps + 1),
+        'train_loss': self.train_losses,
+        'train_error': self.train_errors,
+        'val_loss': self.val_losses,
+        'val_error': self.val_errors
+      })
+
+      results_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+      os.makedirs("models/modeloutputs", exist_ok=True)
+      csv_path = f"models/modeloutputs/iteration.outputs.{results_timestamp}.csv"
+      
+      df.to_csv(csv_path, index=False)
